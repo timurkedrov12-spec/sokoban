@@ -26,3 +26,6 @@ else()
     message(STATUS "Using SFML ${SFML_VERSION} (v2)")
     target_link_libraries(program PRIVATE sfml-graphics sfml-window sfml-system)
 endif()
+
+install(TARGETS program RUNTIME DESTINATION .)
+install(FILES FunnelDisplay-VariableFont_wght.ttf DESTINATION .)

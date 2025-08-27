@@ -8,39 +8,35 @@ jobs:
       VCPKG_DEFAULT_TRIPLET: x64-windows
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # Не запускаем manifest-install, просто ставим сам vcpkg
-      - name: Setup vcpkg (no manifest)
-        uses: lukka/run-vcpkg@v11
+      - name: Setup vcpkg
+        uses: microsoft/setup-vcpkg@v1
         with:
-          runVcpkgInstall: false   # <-- это главное, чтобы не искал vcpkg.json
+          vcpkg-version: '2024.08.23'   # можно зафиксировать; либо убрать строку, чтобы взять кэшированную
 
-      # Классическая установка SFML
-      - name: vcpkg install SFML
-        run: $env:VCPKG_ROOT\vcpkg.exe install sfml:x64-windows
+      - name: Install SFML
+        run: vcpkg install sfml:x64-windows
 
       - name: Configure (CMake)
         run: >
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-          -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}\scripts\buildsystems\vcpkg.cmake
+          -DCMAKE_TOOLCHAIN_FILE=$env:VCPKG_INSTALLATION_ROOT\scripts\buildsystems\vcpkg.cmake
           -DVCPKG_TARGET_TRIPLET=x64-windows
 
       - name: Build
-        run: cmake --build build --config Release -- -m
+        run: cmake --build build --config Release
 
       - name: Install to dist/
         run: cmake --install build --config Release --prefix dist
 
-      # Подкидываем нужные DLL, чтобы .exe запускался без установки SFML
       - name: Copy runtime DLLs
         shell: pwsh
         run: |
-          $bin = Join-Path $env:VCPKG_ROOT "installed/x64-windows/bin"
-          if (Test-Path $bin) { Copy-Item "$bin\*.dll" dist -Force -ErrorAction SilentlyContinue }
+          $bin = "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin"
+          if (Test-Path $bin) { Copy-Item "$bin\*.dll" dist -Force }
 
-      - name: Upload artifact (zip)
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: sokoban-windows
