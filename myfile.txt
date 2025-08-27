@@ -1,0 +1,15 @@
+14 14
+oooooooooooooo
+o   o  o     o
+o   o  o    oo
+o        a b o
+o            o
+oooo      x  o
+o            o
+o            o
+ooooA        o
+o       Booooo
+o   o        o
+o   o    o   o
+o o o    o   o
+oooooooooooooo

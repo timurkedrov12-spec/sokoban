@@ -1,0 +1,17 @@
+BasedOnStyle: Google
+IndentWidth: 4
+AccessModifierOffset: -1  
+ColumnLimit: 0
+BreakBeforeBraces: Attach
+PointerAlignment: Left
+AllowShortIfStatementsOnASingleLine: false
+BraceWrapping:
+  AfterFunction: false
+  AfterClass: false
+  AfterStruct: false
+  AfterControlStatement: false
+  AfterEnum: false
+  BeforeCatch: false
+  BeforeElse: false
+  IndentBraces: false
+SpaceBeforeParens: ControlStatements
