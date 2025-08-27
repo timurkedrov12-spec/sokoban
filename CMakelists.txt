@@ -1,0 +1,28 @@
+cmake_minimum_required(VERSION 3.20)
+project(sokoban CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Источники
+set(SOURCES
+    src/main.cpp
+    src/field.cpp
+    src/prog.cpp
+)
+
+add_executable(program ${SOURCES})
+target_include_directories(program PRIVATE ${CMAKE_SOURCE_DIR}/inc)
+
+# Сначала пытаемся найти SFML 3 (targets: SFML::Graphics etc.)
+find_package(SFML 3 QUIET COMPONENTS Graphics Window System)
+
+if(SFML_FOUND)
+    message(STATUS "Using SFML ${SFML_VERSION} (v3)")
+    target_link_libraries(program PRIVATE SFML::Graphics SFML::Window SFML::System)
+else()
+    # Фоллбэк на SFML 2.5 (targets: sfml-graphics, sfml-window, sfml-system)
+    find_package(SFML 2.5 REQUIRED COMPONENTS graphics window system)
+    message(STATUS "Using SFML ${SFML_VERSION} (v2)")
+    target_link_libraries(program PRIVATE sfml-graphics sfml-window sfml-system)
+endif()

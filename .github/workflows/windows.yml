@@ -1,0 +1,58 @@
+name: Windows Build (ZIP)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg %USERPROFILE%\vcpkg
+          %USERPROFILE%\vcpkg\bootstrap-vcpkg.bat
+
+      - name: Install SFML (dynamic)
+        run: |
+          %USERPROFILE%\vcpkg\vcpkg.exe install sfml:x64-windows
+
+      - name: Configure (CMake)
+        run: >
+          cmake -S . -B build -A x64
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_TOOLCHAIN_FILE=%USERPROFILE%\vcpkg\scripts\buildsystems\vcpkg.cmake
+          -DVCPKG_TARGET_TRIPLET=x64-windows
+
+      - name: Build (CMake)
+        run: cmake --build build --config Release -j 4
+
+      # Соберём "установку" в папку dist с помощью install
+      - name: Install (to dist)
+        run: |
+          cmake --install build --config Release --prefix dist
+
+      # Докинем все нужные DLL из vcpkg (просто копируем все .dll — надёжно)
+      - name: Copy runtime DLLs
+        shell: pwsh
+        run: |
+          $bin = "$env:USERPROFILE/vcpkg/installed/x64-windows/bin"
+          if (Test-Path $bin) {
+            Copy-Item "$bin\*.dll" dist -Force -ErrorAction SilentlyContinue
+          }
+
+      # Упакуем
+      - name: Make ZIP
+        shell: pwsh
+        run: Compress-Archive -Path dist\* -DestinationPath Sokoban-Windows.zip -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Sokoban-Windows
+          path: Sokoban-Windows.zip
