@@ -12,13 +12,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup vcpkg
-        uses: actions/setup-vcpkg@v1
+      # Ставит vcpkg и зависимости из vcpkg.json, кеширует билды
+      - name: Setup vcpkg (manifest mode)
+        uses: lukka/run-vcpkg@v11
         with:
-          vcpkg-json: '${{ github.workspace }}\\vcpkg.json'
-          # закеширует вcpkg и зависимости
+          vcpkgJsonGlob: vcpkg.json
+          triplet: x64-windows
 
-      - name: Configure (CMake, MSVC, vcpkg toolchain)
+      # Конфигурируем CMake с toolchain-файлом vcpkg
+      - name: Configure
         run: >
           cmake -S . -B build
           -DCMAKE_BUILD_TYPE=Release
@@ -32,13 +34,14 @@ jobs:
       - name: Install to staging dir
         run: cmake --install build --config Release --prefix dist
 
-      - name: Copy runtime DLLs from vcpkg
+      # Копируем все нужные DLL из vcpkg рядом с exe
+      - name: Copy runtime DLLs
         shell: pwsh
         run: |
           $bin = Join-Path $env:VCPKG_ROOT "installed/x64-windows/bin"
           if (Test-Path $bin) { Copy-Item "$bin\*.dll" dist -Force -ErrorAction SilentlyContinue }
 
-      - name: Upload artifact (zip with exe + DLLs)
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: sokoban-windows
