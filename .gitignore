@@ -1,3 +1,22 @@
-ltat.03.025/
-SillyTavern/
-ltat.03.025/
+# build artifacts
+/bin/
+/obj/
+/build/
+/CMakeFiles/
+/CMakeCache.txt
+*.o
+*.d
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+
+# runtime/generated
+myfile.txt
+field.txt
+
+# OS / editors
+.DS_Store
+.vscode/
+.idea/

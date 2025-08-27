@@ -1,8 +1,0 @@
-14 7
-oooooooooooooo
-oa   bo      o
-o A B o      o
-o  o  o      o
-oooo  x      o
-o            o
-oooooooooooooo
