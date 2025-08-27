@@ -3,7 +3,6 @@ name: build-windows
 on:
   push:
   pull_request:
-  workflow_dispatch:
 
 jobs:
   build:
@@ -13,49 +12,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show tool versions
-        run: |
-          cmake --version
-          ninja --version || echo "ninja not present (CMake will pick MSBuild)"
+      - name: Setup vcpkg
+        uses: actions/setup-vcpkg@v1
+        with:
+          vcpkg-json: '${{ github.workspace }}\\vcpkg.json'
+          # закеширует вcpkg и зависимости
 
-      - name: Install vcpkg + SFML
-        shell: powershell
-        run: |
-          git clone https://github.com/microsoft/vcpkg $env:VCPKG_ROOT
-          $env:VCPKG_ROOT\bootstrap-vcpkg.bat
-          $env:VCPKG_ROOT\vcpkg.exe install sfml:x64-windows
-
-      - name: Configure (CMake)
-        shell: powershell
-        run: |
-          cmake -S . -B build `
-            -G "Ninja" `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT\scripts\buildsystems\vcpkg.cmake" `
-            -DVCPKG_TARGET_TRIPLET=x64-windows
+      - name: Configure (CMake, MSVC, vcpkg toolchain)
+        run: >
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}\scripts\buildsystems\vcpkg.cmake
+          -DVCPKG_TARGET_TRIPLET=x64-windows
+          -DCMAKE_FIND_DEBUG_MODE=ON
 
       - name: Build
-        run: cmake --build build --config Release --parallel
+        run: cmake --build build --config Release -- -m
 
-      - name: Install to dist/
+      - name: Install to staging dir
         run: cmake --install build --config Release --prefix dist
 
       - name: Copy runtime DLLs from vcpkg
-        shell: powershell
+        shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Copy-Item "$env:VCPKG_ROOT\installed\x64-windows\bin\*.dll" dist -ErrorAction SilentlyContinue
-          # иногда зависимости лежат и в bin, и в debug/bin — оставим только Release:
-          Get-ChildItem dist\*.pdb -ErrorAction SilentlyContinue | Remove-Item -Force
+          $bin = Join-Path $env:VCPKG_ROOT "installed/x64-windows/bin"
+          if (Test-Path $bin) { Copy-Item "$bin\*.dll" dist -Force -ErrorAction SilentlyContinue }
 
-      - name: Zip
-        shell: powershell
-        run: |
-          if (Test-Path Sokoban-Windows.zip) { Remove-Item Sokoban-Windows.zip -Force }
-          Compress-Archive -Path dist\* -DestinationPath Sokoban-Windows.zip
-
-      - name: Upload artifact
+      - name: Upload artifact (zip with exe + DLLs)
         uses: actions/upload-artifact@v4
         with:
-          name: Sokoban-Windows
-          path: Sokoban-Windows.zip
+          name: sokoban-windows
+          path: dist/**
